@@ -6,9 +6,10 @@ import {
   AlertCircle,
   TrendingUp,
 } from "lucide-react";
+import { SimulationHistory } from "../../store/mockData";
 
 interface SimulationExecutionProps {
-  onComplete: () => void;
+  onComplete: (record: SimulationHistory) => void;
 }
 
 export function SimulationExecution({
@@ -63,7 +64,27 @@ export function SimulationExecution({
         setIsRunning(false);
         setCompleted(true);
         setCurrentStep("仿真完成");
-        onComplete();
+
+        // 创建新的仿真记录
+        const now = new Date();
+        const timestamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")} ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}:${String(now.getSeconds()).padStart(2, "0")}`;
+
+        const newRecord: SimulationHistory = {
+          id: `sim-${Date.now()}`,
+          timestamp,
+          cadVersion: "v2.3.1",
+          foldingTime: "7.2s",
+          status: "pass",
+          motorConfig: {
+            motor1Speed: 7500,
+            motor2Speed: 7800,
+            motor3Speed: 7600,
+            motor4Speed: 6500,
+          },
+          notes: "新执行的仿真",
+        };
+
+        onComplete(newRecord);
       }
     }, totalDuration / 100);
   };
@@ -73,7 +94,7 @@ export function SimulationExecution({
       <div className="mb-6">
         <h2 className="text-gray-900 mb-2">一键仿真执行</h2>
         <p className="text-gray-600">
-          基于配置的数模和参数，自动执行 Monte Carlo 仿真分析
+          基于配置的数模和参数，自动执行仿真分析，并对电机时序进行优化
         </p>
       </div>
 

@@ -5,6 +5,7 @@ import { KPIConfiguration } from "./components/KPIConfiguration";
 import { SimulationExecution } from "./components/SimulationExecution";
 import { ResultAnalysis } from "./components/ResultAnalysis";
 import { Settings, User, Zap } from "lucide-react";
+import { mockSimulationHistory, SimulationHistory } from "../store/mockData";
 
 type PageType =
   | "cad"
@@ -15,8 +16,13 @@ type PageType =
 
 export default function App() {
   const [activePage, setActivePage] = useState<PageType>("cad");
-  const [simulationCompleted, setSimulationCompleted] =
-    useState(false);
+  const [simulationCompleted, setSimulationCompleted] = useState(false);
+  const [simulationHistory, setSimulationHistory] = useState<SimulationHistory[]>(mockSimulationHistory);
+
+  const handleSimulationComplete = (newRecord: SimulationHistory) => {
+    setSimulationHistory([newRecord, ...simulationHistory]);
+    setSimulationCompleted(true);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-gray-50">
@@ -113,10 +119,10 @@ export default function App() {
         {activePage === "kpi" && <KPIConfiguration />}
         {activePage === "simulation" && (
           <SimulationExecution
-            onComplete={() => setSimulationCompleted(true)}
+            onComplete={handleSimulationComplete}
           />
         )}
-        {activePage === "results" && <ResultAnalysis />}
+        {activePage === "results" && <ResultAnalysis simulationHistory={simulationHistory} />}
       </main>
     </div>
   );

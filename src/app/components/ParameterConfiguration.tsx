@@ -1,73 +1,79 @@
-import { useState } from 'react';
-import { Plus, Trash2, Save, RotateCcw, AlertCircle } from 'lucide-react';
-import { mockParameters } from '../../store/mockData';
-
-interface Parameter {
-  id: string;
-  name: string;
-  category: string;
-  target: number;
-  unit: string;
-  tolerance: {
-    upper: number;
-    lower: number;
-  };
-  current?: number;
-}
+import { useState } from "react";
+import {
+  Save,
+  RotateCcw,
+  AlertCircle,
+  Zap,
+  Move,
+  Plus,
+  Minus,
+} from "lucide-react";
+import {
+  mockParameters,
+  mockMotorParameters,
+} from "../../store/mockData";
 
 export function ParameterConfiguration() {
-  const [parameters, setParameters] = useState<Parameter[]>(mockParameters);
-
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-
-  const categories = ['电机参数', '轴承参数', '质量参数', '传动参数', '控制参数'];
+  const [parameters, setParameters] = useState(mockParameters);
+  const [motorSpeeds, setMotorSpeeds] = useState(
+    mockMotorParameters.map(m => m.maxSpeed)
+  );
+  const motorParams = mockMotorParameters;
 
   const handleSave = () => {
-    alert('参数配置已保存！');
+    alert("参数配置已保存！");
   };
 
   const handleReset = () => {
-    if (confirm('确定要重置所有参数到默认值吗？')) {
-      // 重置逻辑
+    if (confirm("确定要重置所有参数到默认值吗？")) {
+      setParameters(mockParameters);
+      setMotorSpeeds(mockMotorParameters.map(m => m.maxSpeed));
     }
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm('确定要删除此参数吗？')) {
-      setParameters(parameters.filter(p => p.id !== id));
-    }
+  const updateMotorSpeed = (index: number, value: number) => {
+    const newSpeeds = [...motorSpeeds];
+    newSpeeds[index] = Math.max(0, Math.min(10000, value)); // 限制在0-10000范围
+    setMotorSpeeds(newSpeeds);
   };
 
-  const updateParameter = (id: string, field: string, value: any) => {
+  const incrementSpeed = (index: number) => {
+    updateMotorSpeed(index, motorSpeeds[index] + 100);
+  };
+
+  const decrementSpeed = (index: number) => {
+    updateMotorSpeed(index, motorSpeeds[index] - 100);
+  };
+
+  const updateParameter = (id: string, value: number) => {
     setParameters(
-      parameters.map(p =>
-        p.id === id ? { ...p, [field]: value } : p
-      )
+      parameters.map((p) =>
+        p.id === id ? { ...p, current: value } : p,
+      ),
     );
+  };
+
+  const getParamsByCategory = (category: string) => {
+    return parameters.filter((p) => p.category === category);
   };
 
   return (
     <div className="max-w-7xl mx-auto">
       <div className="mb-8">
-        <h2 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent mb-2">参数配置</h2>
+        <h2 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent mb-2">
+          参数配置
+        </h2>
         <p className="text-gray-600">
-          配置电机、轴承、质量等系统参数的目标值和容差范围，用于 Monte Carlo 仿真
+          配置4个电机的极限转速、行程参数以及系统质量，用于
+          Monte Carlo 仿真
         </p>
       </div>
 
       <div className="grid grid-cols-3 gap-6">
-        {/* 左侧：参数列表 */}
+        {/* 左侧：参数配置 */}
         <div className="col-span-2 space-y-6">
           {/* 操作按钮 */}
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => setShowAddForm(!showAddForm)}
-              className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:shadow-lg hover:shadow-blue-500/30 transition-all flex items-center gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              添加参数
-            </button>
             <button
               onClick={handleSave}
               className="px-5 py-2.5 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:shadow-lg hover:shadow-green-500/30 transition-all flex items-center gap-2"
@@ -84,211 +90,291 @@ export function ParameterConfiguration() {
             </button>
           </div>
 
-          {/* 添加参数表单 */}
-          {showAddForm && (
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 p-6 shadow-xl">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">添加新参数</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-gray-600 mb-1 font-medium">参数名称</label>
-                  <input
-                    type="text"
-                    placeholder="例如：电机额定功率"
-                    className="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-gray-600 mb-1 font-medium">参数分类</label>
-                  <select className="w-full px-3 py-2.5 border border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    {categories.map(cat => (
-                      <option key={cat}>{cat}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-gray-600 mb-1 font-medium">目标值</label>
-                  <input
-                    type="number"
-                    placeholder="150"
-                    className="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-gray-600 mb-1 font-medium">单位</label>
-                  <input
-                    type="text"
-                    placeholder="W"
-                    className="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-gray-600 mb-1 font-medium">上偏差 (+)</label>
-                  <input
-                    type="number"
-                    placeholder="10"
-                    className="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-gray-600 mb-1 font-medium">下偏差 (-)</label>
-                  <input
-                    type="number"
-                    placeholder="5"
-                    className="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-              </div>
-              <div className="flex gap-3 mt-4">
-                <button className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:shadow-lg transition-all">
-                  确认添加
-                </button>
-                <button
-                  onClick={() => setShowAddForm(false)}
-                  className="px-5 py-2.5 bg-white border-2 border-gray-300 rounded-xl hover:bg-gray-50 text-gray-700 transition-all"
-                >
-                  取消
-                </button>
-              </div>
+          {/* 电机参数卡片 */}
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 p-6 shadow-xl px-[24px] py-[11px]">
+            <div className="flex items-center gap-3 mb-6">
+              <Zap className="w-6 h-6 text-blue-600" />
+              <h3 className="text-xl font-semibold text-gray-900">
+                电机参数（4个电机）
+              </h3>
             </div>
-          )}
 
-          {/* 参数表格 */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 overflow-hidden shadow-xl">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-gray-700 font-semibold">参数名称</th>
-                    <th className="px-4 py-3 text-left text-gray-700 font-semibold">分类</th>
-                    <th className="px-4 py-3 text-left text-gray-700 font-semibold">目标值</th>
-                    <th className="px-4 py-3 text-left text-gray-700 font-semibold">容差范围</th>
-                    <th className="px-4 py-3 text-left text-gray-700 font-semibold">当前值</th>
-                    <th className="px-4 py-3 text-left text-gray-700 font-semibold">状态</th>
-                    <th className="px-4 py-3 text-left text-gray-700 font-semibold">操作</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {parameters.map(param => {
-                    const current = param.current || param.target;
-                    const upperLimit = param.target + param.tolerance.upper;
-                    const lowerLimit = param.target + param.tolerance.lower;
-                    const inRange = current >= lowerLimit && current <= upperLimit;
+            <div className="grid grid-cols-2 gap-4">
+              {motorParams.map((motor, idx) => (
+                <div
+                  key={motor.id}
+                  className={`p-5 rounded-xl border-2 ${
+                    motor.currentSpeed > 0
+                      ? "bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200"
+                      : "bg-gray-50 border-gray-200"
+                  }`}
+                >
+                  <div className="flex items-center gap-3 mb-4">
+                    <div
+                      className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                        motor.currentSpeed > 0
+                          ? "bg-blue-600"
+                          : "bg-gray-400"
+                      }`}
+                    >
+                      <span className="text-white font-semibold">
+                        {idx + 1}
+                      </span>
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-semibold text-gray-900">
+                        {motor.name}
+                      </div>
+                      <div className="text-xs text-gray-600">
+                        {motor.type === "rotation"
+                          ? "转动"
+                          : "平动"}
+                      </div>
+                    </div>
+                  </div>
 
-                    return (
-                      <tr key={param.id} className="hover:bg-blue-50/50 transition-colors">
-                        <td className="px-4 py-3 text-gray-900 font-medium">{param.name}</td>
-                        <td className="px-4 py-3 text-gray-600">{param.category}</td>
-                        <td className="px-4 py-3 text-gray-900 font-semibold">
-                          {param.target} {param.unit}
-                        </td>
-                        <td className="px-4 py-3 text-gray-600">
-                          +{param.tolerance.upper} / {param.tolerance.lower} {param.unit}
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className={`font-semibold ${inRange ? 'text-green-600' : 'text-red-600'}`}>
-                            {current} {param.unit}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          {inRange ? (
-                            <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
-                              正常
-                            </span>
-                          ) : (
-                            <span className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">
-                              超限
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3">
+                  <div className="space-y-3">
+                    <div>
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-sm text-gray-600">
+                          极限转速
+                        </span>
+                        <div className="flex items-center gap-2">
                           <button
-                            onClick={() => handleDelete(param.id)}
-                            className="p-2 hover:bg-red-100 rounded-lg text-gray-600 hover:text-red-600 transition-colors"
+                            onClick={() => decrementSpeed(idx)}
+                            className="w-7 h-7 rounded-lg bg-red-100 hover:bg-red-200 text-red-600 flex items-center justify-center transition-all"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Minus className="w-4 h-4" />
                           </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                          <input
+                            type="number"
+                            value={motorSpeeds[idx]}
+                            onChange={(e) => updateMotorSpeed(idx, parseInt(e.target.value) || 0)}
+                            className="w-24 px-2 py-1 border-2 border-gray-300 rounded-lg text-center font-semibold text-gray-900 focus:border-blue-500 focus:outline-none"
+                          />
+                          <span className="text-gray-600 font-medium">rpm</span>
+                          <button
+                            onClick={() => incrementSpeed(idx)}
+                            className="w-7 h-7 rounded-lg bg-green-100 hover:bg-green-200 text-green-600 flex items-center justify-center transition-all"
+                          >
+                            <Plus className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className="bg-blue-600 h-2 rounded-full"
+                          style={{
+                            width: `${(motor.currentSpeed / motorSpeeds[idx]) * 100}%`,
+                          }}
+                        />
+                      </div>
+                      <div className="text-xs text-gray-600 mt-1">
+                        当前: {motor.currentSpeed} rpm
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
+
+          {/* 行程参数表格 */}
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 p-6 shadow-xl px-[24px] py-[11px]">
+            <div className="flex items-center gap-3 mb-6">
+              <Move className="w-6 h-6 text-purple-600" />
+              <h3 className="text-xl font-semibold text-gray-900">
+                行程参数
+              </h3>
+            </div>
+
+            <div className="space-y-3">
+              {getParamsByCategory("行程参数").map((param) => {
+                const current = param.current || param.target;
+                const upperLimit =
+                  param.target + param.tolerance.upper;
+                const lowerLimit =
+                  param.target + param.tolerance.lower;
+                const inRange =
+                  current >= lowerLimit &&
+                  current <= upperLimit;
+
+                return (
+                  <div
+                    key={param.id}
+                    className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border border-purple-200 px-[16px] py-[11px]"
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <div>
+                        <div className="font-semibold text-gray-900">
+                          {param.name}
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          目标: {param.target} {param.unit} |
+                          容差: +{param.tolerance.upper} /{" "}
+                          {param.tolerance.lower}
+                        </div>
+                      </div>
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-medium ${
+                          inRange
+                            ? "bg-green-100 text-green-700"
+                            : "bg-red-100 text-red-700"
+                        }`}
+                      >
+                        {inRange ? "正常" : "超限"}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-4">
+                      <input
+                        type="range"
+                        min={lowerLimit}
+                        max={upperLimit}
+                        step={param.unit === "°" ? 1 : 5}
+                        value={current}
+                        onChange={(e) =>
+                          updateParameter(
+                            param.id,
+                            parseFloat(e.target.value),
+                          )
+                        }
+                        className="flex-1"
+                      />
+                      <input
+                        type="number"
+                        value={current}
+                        onChange={(e) =>
+                          updateParameter(
+                            param.id,
+                            parseFloat(e.target.value),
+                          )
+                        }
+                        className="w-24 px-3 py-2 border border-gray-300 rounded-lg text-center font-semibold"
+                      />
+                      <span className="text-gray-600 w-12">
+                        {param.unit}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 机转速参数表格 */}
         </div>
 
         {/* 右侧：配置摘要和提示 */}
         <div className="space-y-6">
           {/* 参数统计 */}
-          <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-6 shadow-lg text-white">
-            <h3 className="text-lg font-semibold mb-4">配置摘要</h3>
+          <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-6 shadow-lg text-white mt-[19px] mr-[0px] mb-[3px] ml-[0px] px-[24px] py-[12px]">
+            <h3 className="text-lg font-semibold mb-4">
+              配置摘要
+            </h3>
             <div className="space-y-3">
               <div className="flex justify-between items-center">
-                <span className="text-blue-100">总参数数量</span>
-                <span className="font-bold text-xl">{parameters.length}</span>
+                <span className="text-blue-100">
+                  总参数数量
+                </span>
+                <span className="font-bold text-xl">
+                  {parameters.length}
+                </span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-blue-100">电机参数</span>
                 <span className="font-bold text-xl">
-                  {parameters.filter(p => p.category === '电机参数').length}
+                  {getParamsByCategory("电机参数").length}
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-blue-100">传动参数</span>
+                <span className="text-blue-100">行程参数</span>
                 <span className="font-bold text-xl">
-                  {parameters.filter(p => p.category === '传动参数').length}
+                  {getParamsByCategory("行程参数").length}
                 </span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-blue-100">质量参数</span>
                 <span className="font-bold text-xl">
-                  {parameters.filter(p => p.category === '质量参数').length}
+                  {getParamsByCategory("质量参数").length}
                 </span>
               </div>
             </div>
           </div>
 
+          {/* 质量参数 */}
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 p-6 shadow-lg px-[24px] py-[22px] mt-[18px] mr-[0px] mb-[24px] ml-[0px]">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              质量参数
+            </h3>
+            {getParamsByCategory("质量参数").map((param) => {
+              const current = param.current || param.target;
+              return (
+                <div
+                  key={param.id}
+                  className="p-4 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-200"
+                >
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-gray-700 font-medium">
+                      {param.name}
+                    </span>
+                    <span className="font-bold text-xl text-gray-900">
+                      {current} {param.unit}
+                    </span>
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    目标: {param.target} {param.unit} (±
+                    {param.tolerance.upper} {param.unit})
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
           {/* 配置指南 */}
-          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border border-blue-200/50 p-6 shadow-lg">
+          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border border-blue-200/50 p-6 shadow-lg px-[24px] py-[30px] mt-[0px] mr-[0px] mb-[34px] ml-[0px]">
             <div className="flex items-center gap-2 mb-3">
               <AlertCircle className="w-5 h-5 text-blue-600" />
-              <h3 className="text-blue-900 font-semibold">配置指南</h3>
+              <h3 className="text-blue-900 font-semibold">
+                配置指南
+              </h3>
             </div>
-            <div className="text-blue-800 space-y-2.5">
+            <div className="text-blue-800 space-y-2.5 text-sm">
               <div className="flex items-start gap-2">
                 <span className="text-blue-600 mt-0.5">•</span>
-                <span>目标值：理想工作点的参数值</span>
+                <span>电机1和2为转动电机，控制手轮和俯仰</span>
               </div>
               <div className="flex items-start gap-2">
                 <span className="text-blue-600 mt-0.5">•</span>
-                <span>容差范围：Monte Carlo 仿真的变化区间</span>
+                <span>电机3为平动电机，控制滑轨行程</span>
               </div>
               <div className="flex items-start gap-2">
                 <span className="text-blue-600 mt-0.5">•</span>
-                <span>容差越大，仿真覆盖的工况越全面</span>
+                <span>电机4为XX电机，控制xx使用</span>
               </div>
               <div className="flex items-start gap-2">
                 <span className="text-blue-600 mt-0.5">•</span>
-                <span>建议根据实际生产偏差设置容差</span>
+                <span>
+                  容差范围影响Monte Carlo仿真的随机变化区间
+                </span>
               </div>
             </div>
           </div>
 
           {/* 快捷模板 */}
           <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 p-6 shadow-lg">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">快捷模板</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              快捷模板
+            </h3>
             <div className="space-y-2">
               <button className="w-full px-4 py-2.5 bg-white border-2 border-gray-300 rounded-xl hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:border-blue-300 transition-all text-left text-gray-700 font-medium">
                 标准配置模板
               </button>
               <button className="w-full px-4 py-2.5 bg-white border-2 border-gray-300 rounded-xl hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:border-blue-300 transition-all text-left text-gray-700 font-medium">
-                高性能配置
+                高速折叠配置
               </button>
               <button className="w-full px-4 py-2.5 bg-white border-2 border-gray-300 rounded-xl hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:border-blue-300 transition-all text-left text-gray-700 font-medium">
-                低成本配置
-              </button>
-              <button className="w-full px-4 py-2.5 bg-white border-2 border-gray-300 rounded-xl hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:border-blue-300 transition-all text-left text-gray-700 font-medium">
-                导入自定义模板
+                低噪音配置
               </button>
             </div>
           </div>
